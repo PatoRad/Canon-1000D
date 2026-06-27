@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOF · Rebel 1000D</title>
+<style>
+  :root {
+    --bg: #16140f;
+    --panel: #1f1c15;
+    --line: #38332688;
+    --paper: #ece4d3;
+    --paper-dim: #b3a98f;
+    --accent: #d4632c;
+    --accent-soft: #d4632c33;
+    --focus-zone: #d4632c2a;
+    --focus-edge: #d4632c;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --serif: 'Georgia', 'Iowan Old Style', serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--paper);
+    font-family: var(--serif);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    margin-bottom: 22px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 16px;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  h1 {
+    font-size: 26px;
+    font-weight: 400;
+    margin: 0 0 4px;
+    letter-spacing: 0.01em;
+  }
+  .subtitle {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    color: var(--paper-dim);
+  }
+
+  /* ---------- Scene (visual DOF strip) ---------- */
+  .scene {
+    position: relative;
+    height: 130px;
+    background: linear-gradient(180deg, #211d16, #19170f);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .scene-cone {
+    position: absolute;
+    top: 0; bottom: 0; left: 8%;
+    width: 0; height: 0;
+    border-top: 65px solid transparent;
+    border-bottom: 65px solid transparent;
+    border-left: 92% solid #ffffff08;
+  }
+  .scene-track {
+    position: absolute;
+    left: 8%; right: 4%;
+    top: 0; bottom: 0;
+  }
+  .scene-zone {
+    position: absolute;
+    top: 0; bottom: 0;
+    background: var(--focus-zone);
+    border-left: 1px solid var(--focus-edge);
+    border-right: 1px solid var(--focus-edge);
+    transition: left 0.15s ease, width 0.15s ease;
+  }
+  .scene-subject {
+    position: absolute;
+    bottom: 10px;
+    width: 3px;
+    background: var(--accent);
+    transition: left 0.15s ease;
+  }
+  .scene-subject::after {
+    content: '';
+    position: absolute;
+    top: -8px; left: -4.5px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .scene-label {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--paper-dim);
+  }
+
+  /* ---------- Results ---------- */
+  .results {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    margin-bottom: 26px;
+  }
+  .result {
+    background: var(--panel);
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .result-label {
+    font-family: var(--mono);
+    font-size: 9.5px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--paper-dim);
+    margin-bottom: 6px;
+  }
+  .result-value {
+    font-family: var(--mono);
+    font-size: 18px;
+    color: var(--paper);
+  }
+  .result.highlight .result-value { color: var(--accent); }
+
+  /* ---------- Controls ---------- */
+  .control {
+    margin-bottom: 22px;
+  }
+  .control-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+  }
+  .control-name {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--paper-dim);
+  }
+  .control-value {
+    font-size: 15px;
+    color: var(--accent);
+  }
+  .control-note {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--paper-dim);
+    margin-top: 6px;
+    line-height: 1.5;
+  }
+
+  input[type="range"] {
+    -webkit-appearance: none;
+    width: 100%;
+    height: 2px;
+    background: var(--line);
+    outline: none;
+    margin: 4px 0;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--accent);
+    cursor: pointer;
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--paper);
+    border: 2px solid var(--accent);
+    cursor: pointer;
+  }
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    font-family: var(--mono);
+    font-size: 9.5px;
+    color: var(--paper-dim);
+    margin-top: 2px;
+  }
+
+  /* ---------- Presets ---------- */
+  .presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 28px 0 8px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+  }
+  .preset-eyebrow {
+    width: 100%;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--paper-dim);
+    margin-bottom: 10px;
+  }
+  button.preset {
+    background: transparent;
+    border: 1px solid var(--line);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 8px 12px;
+    border-radius: 2px;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s;
+  }
+  button.preset:hover, button.preset:focus-visible {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  button.preset:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Footer / lock note ---------- */
+  .lockbar {
+    margin-top: 30px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--paper-dim);
+    line-height: 1.6;
+  }
+  .lockbar strong { color: var(--paper); }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Canon EOS Rebel 1000D · EF‑S 18‑55mm f/3.5‑5.6</div>
+    <h1>Calculadora de profundidad de campo</h1>
+    <div class="subtitle">Solo permite los valores que tu cámara y lente pueden hacer.</div>
+  </header>
+
+  <div class="scene" id="scene">
+    <div class="scene-cone"></div>
+    <div class="scene-track" id="sceneTrack">
+      <div class="scene-zone" id="sceneZone"></div>
+      <div class="scene-subject" id="sceneSubject"></div>
+      <div class="scene-label" id="sceneLabelNear" style="bottom:-2px;"></div>
+      <div class="scene-label" id="sceneLabelFar" style="bottom:-2px;"></div>
+      <div class="scene-label" id="sceneLabelSubject" style="top:4px;"></div>
+    </div>
+  </div>
+
+  <div class="results">
+    <div class="result"><div class="result-label">Enfoque cerca</div><div class="result-value" id="rNear">—</div></div>
+    <div class="result highlight"><div class="result-label">Enfoque lejos</div><div class="result-value" id="rFar">—</div></div>
+    <div class="result"><div class="result-label">Total nítido</div><div class="result-value" id="rDof">—</div></div>
+    <div class="result"><div class="result-label">Hiperfocal</div><div class="result-value" id="rHyper">—</div></div>
+  </div>
+
+  <div class="control">
+    <div class="control-head">
+      <span class="control-name">Distancia al sujeto</span>
+      <span class="control-value" id="vDistance">2.0 m</span>
+    </div>
+    <input type="range" id="distance" min="0.5" max="10" step="0.1" value="2">
+    <div class="ticks"><span>0.5m</span><span>2.5m</span><span>5m</span><span>7.5m</span><span>10m</span></div>
+  </div>
+
+  <div class="control">
+    <div class="control-head">
+      <span class="control-name">Zoom del lente</span>
+      <span class="control-value" id="vFocal">18 mm</span>
+    </div>
+    <input type="range" id="focal" min="18" max="55" step="1" value="18">
+    <div class="ticks"><span>18mm (angular)</span><span>35mm</span><span>55mm (zoom)</span></div>
+  </div>
+
+  <div class="control">
+    <div class="control-head">
+      <span class="control-name">Apertura</span>
+      <span class="control-value" id="vAperture">f/3.5</span>
+    </div>
+    <input type="range" id="aperture" min="0" max="100" step="1" value="0">
+    <div class="ticks"><span id="apMinLabel">f/3.5 (máx. abierta)</span><span id="apMaxLabel">f/22 (cerrada)</span></div>
+    <div class="control-note" id="apertureNote"></div>
+  </div>
+
+  <div class="presets">
+    <div class="preset-eyebrow">Situaciones comunes</div>
+    <button class="preset" data-d="1.5" data-f="55" data-ap="0">Retrato — fondo lo más desenfocado posible</button>
+    <button class="preset" data-d="2.5" data-f="35" data-ap="40">Grupo de 2-3 personas</button>
+    <button class="preset" data-d="4" data-f="18" data-ap="80">Paisaje / arquitectura, todo nítido</button>
+    <button class="preset" data-d="0.6" data-f="55" data-ap="0">Producto / macro cercano</button>
+  </div>
+
+  <div class="lockbar">
+    <strong>Por qué está limitado así:</strong> el sensor queda fijo en APS‑C (factor 1.6x, el de tu Rebel 1000D).
+    El zoom no pasa de 18–55mm porque es el rango físico de tu lente de kit. La apertura nunca se abre más
+    de lo que el lente permite a cada distancia de zoom — por eso el rango de apertura se hace más angosto
+    a medida que mueves el zoom hacia 55mm.
+  </div>
+
+</div>
+
+<script>
+(function () {
+  const distanceEl = document.getElementById('distance');
+  const focalEl = document.getElementById('focal');
+  const apertureEl = document.getElementById('aperture');
+
+  const vDistance = document.getElementById('vDistance');
+  const vFocal = document.getElementById('vFocal');
+  const vAperture = document.getElementById('vAperture');
+  const apMinLabel = document.getElementById('apMinLabel');
+  const apertureNote = document.getElementById('apertureNote');
+
+  const rNear = document.getElementById('rNear');
+  const rFar = document.getElementById('rFar');
+  const rDof = document.getElementById('rDof');
+  const rHyper = document.getElementById('rHyper');
+
+  const sceneZone = document.getElementById('sceneZone');
+  const sceneSubject = document.getElementById('sceneSubject');
+  const sceneLabelNear = document.getElementById('sceneLabelNear');
+  const sceneLabelFar = document.getElementById('sceneLabelFar');
+  const sceneLabelSubject = document.getElementById('sceneLabelSubject');
+
+  // Circle of confusion for APS-C Canon (1.6x crop), in mm
+  const COC = 0.0188;
+
+  // Max aperture (widest) of the EF-S 18-55mm f/3.5-5.6 kit lens,
+  // interpolated across the zoom range (approximate, matches Canon's published steps)
+  const F_STOPS = [3.5, 4.0, 4.5, 5.0, 5.6]; // standard 1/3-stop-ish progression across the zoom
+  const FOCAL_BREAKPOINTS = [18, 24, 35, 45, 55];
+
+  function maxApertureAt(focal) {
+    // Linear interpolation between breakpoints
+    for (let i = 0; i < FOCAL_BREAKPOINTS.length - 1; i++) {
+      const f0 = FOCAL_BREAKPOINTS[i], f1 = FOCAL_BREAKPOINTS[i + 1];
+      if (focal >= f0 && focal <= f1) {
+        const t = (focal - f0) / (f1 - f0);
+        return F_STOPS[i] + t * (F_STOPS[i + 1] - F_STOPS[i]);
+      }
+    }
+    return focal <= 18 ? F_STOPS[0] : F_STOPS[F_STOPS.length - 1];
+  }
+
+  // Full f-stop scale we expose between min (lens-dependent) and 22
+  const FULL_STOPS = [1.0, 1.4, 1.8, 2.0, 2.8, 3.5, 4.0, 4.5, 5.0, 5.6, 6.3, 7.1, 8, 9, 10, 11, 13, 14, 16, 18, 20, 22];
+
+  function availableStopsAt(focal) {
+    const minF = maxApertureAt(focal);
+    return FULL_STOPS.filter(f => f >= minF - 0.01);
+  }
+
+  function fmt(n) {
+    if (n === Infinity) return '∞';
+    if (n >= 100) return Math.round(n) + ' m';
+    return n.toFixed(2) + ' m';
+  }
+
+  function calcDOF(focalLengthMm, aperture, distanceM) {
+    const f = focalLengthMm;
+    const N = aperture;
+    const s = distanceM * 1000; // mm
+    const hyperfocalMm = (f * f) / (N * COC) + f;
+    const nearMm = (s * (hyperfocalMm - f)) / (hyperfocalMm + s - 2 * f);
+    let farMm;
+    if (s >= hyperfocalMm) {
+      farMm = Infinity;
+    } else {
+      farMm = (s * (hyperfocalMm - f)) / (hyperfocalMm - s);
+    }
+    return {
+      near: nearMm / 1000,
+      far: farMm === Infinity ? Infinity : farMm / 1000,
+      hyper: hyperfocalMm / 1000,
+      dof: farMm === Infinity ? Infinity : (farMm - nearMm) / 1000
+    };
+  }
+
+  function render() {
+    const distance = parseFloat(distanceEl.value);
+    const focal = parseFloat(focalEl.value);
+
+    const stops = availableStopsAt(focal);
+    const apIndex = Math.round((parseInt(apertureEl.value, 10) / 100) * (stops.length - 1));
+    const aperture = stops[apIndex];
+
+    vDistance.textContent = distance.toFixed(1) + ' m';
+    vFocal.textContent = focal + ' mm' + (focal === 18 ? ' (angular)' : focal === 55 ? ' (zoom)' : '');
+    vAperture.textContent = 'f/' + (aperture % 1 === 0 ? aperture.toFixed(1) : aperture.toFixed(1));
+    apMinLabel.textContent = 'f/' + stops[0].toFixed(1) + ' (máx. abierta a ' + focal + 'mm)';
+
+    const minLensF = maxApertureAt(focal);
+    apertureNote.textContent = 'A ' + focal + 'mm, tu lente abre como máximo a f/' + minLensF.toFixed(1) +
+      '. El slider no te deja pasarte de ahí.';
+
+    const result = calcDOF(focal, aperture, distance);
+
+    rNear.textContent = fmt(result.near);
+    rFar.textContent = fmt(result.far);
+    rDof.textContent = result.dof === Infinity ? '∞' : fmt(result.dof);
+    rHyper.textContent = fmt(result.hyper);
+
+    // ---- visual scene ----
+    const maxSceneM = Math.max(10, result.far === Infinity ? distance * 2.2 : result.far * 1.15);
+    const pctOf = (m) => Math.min(100, Math.max(0, (m / maxSceneM) * 100));
+
+    const nearPct = pctOf(result.near);
+    const farPct = result.far === Infinity ? 100 : pctOf(result.far);
+    const subjPct = pctOf(distance);
+
+    sceneZone.style.left = nearPct + '%';
+    sceneZone.style.width = Math.max(0.5, farPct - nearPct) + '%';
+    sceneSubject.style.left = subjPct + '%';
+
+    sceneLabelNear.style.left = nearPct + '%';
+    sceneLabelNear.textContent = fmt(result.near);
+    sceneLabelFar.style.left = Math.min(94, farPct) + '%';
+    sceneLabelFar.textContent = result.far === Infinity ? '∞' : fmt(result.far);
+    sceneLabelSubject.style.left = Math.min(94, subjPct) + '%';
+    sceneLabelSubject.textContent = distance.toFixed(1) + 'm';
+  }
+
+  function applyPreset(d, f, apPercent) {
+    distanceEl.value = d;
+    focalEl.value = f;
+    apertureEl.value = apPercent;
+    render();
+  }
+
+  distanceEl.addEventListener('input', render);
+  focalEl.addEventListener('input', render);
+  apertureEl.addEventListener('input', render);
+
+  document.querySelectorAll('button.preset').forEach(btn => {
+    btn.addEventListener('click', () => {
+      applyPreset(
+        parseFloat(btn.dataset.d),
+        parseFloat(btn.dataset.f),
+        parseInt(btn.dataset.ap, 10)
+      );
+    });
+  });
+
+  render();
+})();
+</script>
+
+</body>
+</html>
